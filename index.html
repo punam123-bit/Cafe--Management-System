@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cafe</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background: linear-gradient(to right, #9d83e6, #e375c9);
+            margin: 0;
+            padding: 0;
+        }
+        
+        h1 {
+            color: white;
+            font-size: 2.5em;
+            margin: 20px 0;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .category {
+            background: linear-gradient(to right, #8ddcba, #ae84e9);
+            color: white;
+            padding: 15px;
+            width: 80%;
+            border-radius: 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            margin-top: 20px;
+        }
+
+        .menu-item {
+            background: white;
+            padding: 15px;
+            margin: 10px;
+            width: 70%;
+            border-radius: 10px;
+            box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .menu-item img {
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            margin-right: 15px;
+        }
+
+        .cart {
+            background: white;
+            padding: 15px;
+            width: 70%;
+            border-radius: 10px;
+            box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+        
+        .remove {
+            background: red;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to My cafe</h1>
+    <div class="menu-container" id="menu-container"></div>
+
+    <h2>Cart</h2>
+    <div class="cart">
+        <ul id="cart-list"></ul>
+        <p>Total: Rs <span id="total">0</span></p>
+        <button onclick="checkout()">Checkout</button>
+    </div>
+
+<script>
+    let menu = {
+        'Pizza': {'Margherita': 40, 'Cheese Burst': 60, 'Veggie': 50},
+        'Pasta': {'White Sauce': 50, 'Red Sauce': 55, 'Cheese': 60},
+        'Burger': {'Veg': 45, 'Cheese': 50, 'Paneer': 55},
+        'Maggie': {'Classic': 42, 'Spicy': 45, 'Chinese': 50},
+        'Cold Coffee': {'Regular': 60, 'Mocha': 65, 'Caramel': 70}
+    };
+
+    let imageMap = {
+        'Pizza': 'pizza.jpg',
+        'Pasta': 'pasta.jpg',
+        'Burger': 'burger.jpg',
+        'Maggie': 'maggie.jpg',
+        'Cold Coffee': 'coldcofee.jpg'
+    };
+
+    let total = 0;
+    let cart = {};
+
+    function renderMenu() {
+        let menuContainer = document.getElementById("menu-container");
+        menuContainer.innerHTML = "";
+
+        for (let category in menu) {
+            let categoryDiv = document.createElement("div");
+            categoryDiv.className = "category";
+            categoryDiv.innerText = category;
+            menuContainer.appendChild(categoryDiv);
+
+            let categoryMenu = document.createElement("div");
+            categoryMenu.className = "menu";
+
+            for (let item in menu[category]) {
+                let itemDiv = document.createElement("div");
+                itemDiv.className = "menu-item";
+
+                let img = document.createElement("img");
+                img.src = imageMap[category];
+                img.alt = item;
+
+                let span = document.createElement("span");
+                span.innerText = `${item} - Rs${menu[category][item]}`;
+
+                let button = document.createElement("button");
+                button.innerText = "Add";
+                button.onclick = function() {
+                    addToCart(item, menu[category][item]);
+                };
+
+                itemDiv.appendChild(img);
+                itemDiv.appendChild(span);
+                itemDiv.appendChild(button);
+                categoryMenu.appendChild(itemDiv);
+            }
+            menuContainer.appendChild(categoryMenu);
+        }
+    }
+
+    function addToCart(item, price) {
+        if (cart[item]) {
+            cart[item].quantity += 1;
+        } else {
+            cart[item] = { price: price, quantity: 1 };
+        }
+        total += price;
+        updateCart();
+        alert(`${item} added to cart!`);
+    }
+
+    function removeFromCart(item) {
+        if (cart[item]) {
+            total -= cart[item].price;
+            if (cart[item].quantity > 1) {
+                cart[item].quantity -= 1;
+            } else {
+                delete cart[item];
+            }
+            updateCart();
+        }
+    }
+
+    function updateCart() {
+        let cartList = document.getElementById("cart-list");
+        cartList.innerHTML = "";
+
+        for (let item in cart) {
+            let li = document.createElement("li");
+            li.innerText = `${item} x ${cart[item].quantity} - Rs${cart[item].price * cart[item].quantity}`;
+
+            let removeBtn = document.createElement("button");
+            removeBtn.innerText = "Remove";
+            removeBtn.className = "remove";
+            removeBtn.onclick = function() {
+                removeFromCart(item);
+            };
+
+            li.appendChild(removeBtn);
+            cartList.appendChild(li);
+        }
+        document.getElementById("total").innerText = total;
+    }
+
+
+    async function checkout() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.setFontSize(20);
+        doc.text("My cafe - Order Bill", 60, 20);
+
+        doc.setFontSize(12);
+        let y = 40;
+
+        doc.text("Item               Qty           Price", 20, y);
+        y += 10;
+
+        for (let item in cart) {
+            doc.text(`${item}              ${cart[item].quantity}              Rs${cart[item].price * cart[item].quantity}`, 20, y);
+            y += 10;
+        }
+
+        y += 10;
+        doc.text(`Total Bill : Rs ${total}`, 20, y);
+
+        y += 20;
+        doc.text("Thank You! Visit Again :)", 60, y);
+
+        doc.save("MyCafe_Invoice.pdf");
+
+        alert(`PDF Bill Generated! Total Bill is Rs ${total}`);
+    }
+
+    renderMenu();
+</script>
+
+</body>
+</html>
